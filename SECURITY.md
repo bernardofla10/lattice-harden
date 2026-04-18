@@ -6,7 +6,7 @@ LatticeHarden is a security engineering portfolio and research project. It is in
 
 ## Reporting a Vulnerability
 
-If you believe you have identified a security vulnerability in this repository, please report it by email to `security@example.com`.
+If you believe you have identified a security vulnerability in this repository, please report it by email to `bernardofla10ps4@gmail.com`.
 
 Please include:
 
