@@ -1,0 +1,1 @@
+# Placeholder dependency manifest. Dependencies will be pinned in a later phase.
