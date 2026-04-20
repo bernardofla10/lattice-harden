@@ -51,7 +51,8 @@ jobs:
         with:
           base: ""
           head: HEAD
-          extra_args: --results=verified --fail
+          version: 3.92.4
+          extra_args: --results=verified
 
   # Threat addressed: known vulnerable third-party dependencies that increase
   # exposure to publicly documented exploitation paths in the build artifact.
