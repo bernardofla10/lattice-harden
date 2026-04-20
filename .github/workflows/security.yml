@@ -1,1 +1,92 @@
-# Placeholder workflow. Security pipeline will be added in a later phase.
+name: Security Pipeline
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  # Threat addressed: insecure application code paths reaching the repository,
+  # including common Python vulnerabilities in API and AI-facing modules.
+  sast:
+    name: SAST (Semgrep)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          persist-credentials: false
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.11"
+
+      - name: Install Semgrep CLI
+        run: python -m pip install --upgrade pip semgrep==1.160.0
+
+      - name: Run Semgrep auto ruleset on Python sources
+        run: semgrep scan --config=auto --error --include='*.py' api ai-security
+
+  # Threat addressed: committed credentials and tokens that would expand the
+  # blast radius of a repository compromise or malicious history rewrite.
+  secrets:
+    name: Secrets (TruffleHog)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out full repository history
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Scan full git history for verified secrets
+        uses: trufflesecurity/trufflehog@47e7b7cd74f578e1e3145d48f669f22fd1330ca6
+        with:
+          base: ""
+          head: HEAD
+          extra_args: --results=verified --fail
+
+  # Threat addressed: known vulnerable third-party dependencies that increase
+  # exposure to publicly documented exploitation paths in the build artifact.
+  dependencies:
+    name: Dependencies (Trivy)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          persist-credentials: false
+
+      - name: Report HIGH and CRITICAL dependency vulnerabilities
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: table
+          severity: CRITICAL,HIGH
+          exit-code: "0"
+          version: v0.70.0
+          cache: false
+
+      # Phase 0 blocks only CRITICAL dependency findings to establish the
+      # pipeline without stalling initial hardening; tighten this to HIGH and
+      # CRITICAL once the baseline dependency backlog has been remediated.
+      - name: Enforce CRITICAL dependency vulnerability gate
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: table
+          severity: CRITICAL
+          exit-code: "1"
+          version: v0.70.0
+          cache: false
+          skip-setup-trivy: true
