@@ -1,1 +1,3 @@
-# Placeholder dependency manifest. Dependencies will be pinned in a later phase.
+fastapi==0.115.6
+pydantic==2.10.4
+uvicorn[standard]==0.34.0
